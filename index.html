@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audio Recorder</title>
+</head>
+<body>
+    <button id="start">Start Recording</button>
+    <button id="stop">Stop Recording</button>
+
+    <script>
+        document.getElementById('start').addEventListener('click', startRecording);
+        document.getElementById('stop').addEventListener('click', stopRecording);
+
+        async function getMicrophoneAccess() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                return stream;
+            } catch (err) {
+                console.error('Error accessing microphone: ', err);
+                return null;
+            }
+        }
+
+        let mediaRecorder;
+        let audioChunks = [];
+        let d
+
+        async function startRecording() {
+            const stream = await getMicrophoneAccess();
+            if (!stream) return;
+
+            mediaRecorder = new MediaRecorder(stream, {mimeType: 'audio/webm;codecs=opus'});
+
+            mediaRecorder.ondataavailable = event => {
+                if (event.data.size > 0) {
+                    // audioChunks.push(event.data);
+                    d = event.data
+                    // console.log(audioChunks)
+                }
+            };
+
+            mediaRecorder.onstop = () => {
+                console.log(d, 'здесь')
+                // const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                // audioChunks = [];
+                const audioUrl = URL.createObjectURL(d);
+                const audio = new Audio(audioUrl);
+                audio.controls = true;
+                let fr = new FileReader()
+                fr.onload = (e)=>{
+                    console.log(new Int8Array(e.target.result), new Int8Array(e.target.result)[0])
+                }
+                console.dir(audio)
+                fr.readAsArrayBuffer(d)
+                document.body.appendChild(audio);
+            };
+
+            mediaRecorder.start();
+        }
+
+        function stopRecording() {
+            if (mediaRecorder) {
+                mediaRecorder.stop();
+            }
+        }
+    </script>
+</body>
+</html>
